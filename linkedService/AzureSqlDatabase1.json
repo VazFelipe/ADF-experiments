@@ -6,7 +6,7 @@
 		"type": "AzureSqlDatabase",
 		"typeProperties": {
 			"connectionString": "integrated security=False;encrypt=True;connection timeout=30;data source=demo-sessions.database.windows.net;initial catalog=demo-sessions;user id=mysqlserverdemosessiosns",
-			"encryptedCredential": "ew0KICAiVmVyc2lvbiI6ICIyMDE3LTExLTMwIiwNCiAgIlByb3RlY3Rpb25Nb2RlIjogIktleSIsDQogICJTZWNyZXRDb250ZW50VHlwZSI6ICJQbGFpbnRleHQiLA0KICAiQ3JlZGVudGlhbElkIjogIkRBVEFGQUNUT1JZQEIzODM5QTcyLTY3NkEtNDA0QS05OTE0LTNCMTQwNkJGQTYwMF9mMTJlZDNlZC03OTdjLTQ1YTctYWQxMS1mYzk2N2Q4YzlmNDEiDQp9"
+			"encryptedCredential": "ew0KICAiVmVyc2lvbiI6ICIyMDE3LTExLTMwIiwNCiAgIlByb3RlY3Rpb25Nb2RlIjogIktleSIsDQogICJTZWNyZXRDb250ZW50VHlwZSI6ICJQbGFpbnRleHQiLA0KICAiQ3JlZGVudGlhbElkIjogIkRBVEFGQUNUT1JZQEIzODM5QTcyLTY3NkEtNDA0QS05OTE0LTNCMTQwNkJGQTYwMF83YjcyYTRmOS1iZGE4LTRkZmItOTk5MC1kMzVhMTUzOTQ1MjEiDQp9"
 		}
 	}
 }
