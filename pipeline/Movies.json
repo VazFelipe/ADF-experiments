@@ -30,7 +30,7 @@
 				},
 				"outputs": [
 					{
-						"referenceName": "MoviesDataset",
+						"referenceName": "MoviesLoading_EL",
 						"type": "DatasetReference"
 					}
 				]
