@@ -1,0 +1,12 @@
+{
+	"name": "MoviesVazFelipeGitHub",
+	"properties": {
+		"annotations": [],
+		"type": "HttpServer",
+		"typeProperties": {
+			"url": "https://raw.githubusercontent.com/VazFelipe/ADF-experiments/main/MoviesDataset-demo/moviesDB.csv",
+			"enableServerCertificateValidation": true,
+			"authenticationType": "Anonymous"
+		}
+	}
+}
