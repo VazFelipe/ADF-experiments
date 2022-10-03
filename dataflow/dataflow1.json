@@ -6,7 +6,7 @@
 			"sources": [
 				{
 					"dataset": {
-						"referenceName": "Movies",
+						"referenceName": "MoviesDataset",
 						"type": "DatasetReference"
 					},
 					"name": "MoviesAzureDataLakeStorage"
