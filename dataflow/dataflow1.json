@@ -9,17 +9,24 @@
 						"referenceName": "Movies",
 						"type": "DatasetReference"
 					},
-					"name": "MoviesAZureDataLakeStorage"
+					"name": "MoviesAzureDataLakeStorage"
 				}
 			],
 			"sinks": [],
 			"transformations": [
 				{
-					"name": "select1",
-					"description": "Renaming Rotten Tomato"
+					"name": "SchemaChanging",
+					"description": "Collumn deletion and renaming"
 				},
 				{
-					"name": "filter1"
+					"name": "FilterYearGreaterThan"
+				},
+				{
+					"name": "DerivedPrimaryGenre",
+					"description": "Creating if logic for column genres"
+				},
+				{
+					"name": "Ranking"
 				}
 			],
 			"scriptLines": [
@@ -33,18 +40,22 @@
 				"     ),",
 				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
-				"     ignoreNoFilesFound: false) ~> MoviesAZureDataLakeStorage",
-				"MoviesAZureDataLakeStorage select(mapColumn(",
+				"     ignoreNoFilesFound: false) ~> MoviesAzureDataLakeStorage",
+				"MoviesAzureDataLakeStorage select(mapColumn(",
 				"          movie,",
 				"          title,",
 				"          genres,",
 				"          year,",
-				"          Rating,",
 				"          {Rotten Tomato} = {Rotton Tomato}",
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> select1",
-				"select1 filter(toInteger(year) > 1950) ~> filter1"
+				"     skipDuplicateMapOutputs: true) ~> SchemaChanging",
+				"SchemaChanging filter(toInteger(year) > 1950) ~> FilterYearGreaterThan",
+				"FilterYearGreaterThan derive(PrimaryGenre = iif(locate('|', genres) > 1, left(genres, locate('|',genres) - 1), genres)) ~> DerivedPrimaryGenre",
+				"DerivedPrimaryGenre window(over(PrimaryGenre,",
+				"          year),",
+				"     desc({Rotten Tomato}, true),",
+				"     RatingsRank = rank()) ~> Ranking"
 			]
 		}
 	}
