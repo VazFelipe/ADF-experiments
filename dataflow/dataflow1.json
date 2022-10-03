@@ -12,7 +12,15 @@
 					"name": "MoviesAzureDataLakeStorage"
 				}
 			],
-			"sinks": [],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable1",
+						"type": "DatasetReference"
+					},
+					"name": "SinkToDB"
+				}
+			],
 			"transformations": [
 				{
 					"name": "SchemaChanging",
@@ -27,6 +35,13 @@
 				},
 				{
 					"name": "Ranking"
+				},
+				{
+					"name": "AggregateRatings",
+					"description": "Aggregations"
+				},
+				{
+					"name": "UpsertIfTrue"
 				}
 			],
 			"scriptLines": [
@@ -55,7 +70,25 @@
 				"DerivedPrimaryGenre window(over(PrimaryGenre,",
 				"          year),",
 				"     desc({Rotten Tomato}, true),",
-				"     RatingsRank = rank()) ~> Ranking"
+				"     RatingsRank = rank()) ~> Ranking",
+				"Ranking aggregate(groupBy(PrimaryGenre,",
+				"          year),",
+				"     AverageRating = avg(toInteger({Rotten Tomato})),",
+				"          HighestRated = first(title),",
+				"          LowestRated = last(title),",
+				"          NumberOfMovies = count()) ~> AggregateRatings",
+				"AggregateRatings alterRow(upsertIf(true())) ~> UpsertIfTrue",
+				"UpsertIfTrue sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:false,",
+				"     updateable:false,",
+				"     upsertable:true,",
+				"     keys:['PrimaryGenre','year'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> SinkToDB"
 			]
 		}
 	}
