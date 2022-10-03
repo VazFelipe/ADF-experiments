@@ -1,0 +1,9 @@
+{
+	"name": "ADF-free-account-200-dollars",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "2e5f92c3-4b19-4450-953f-14931c7d42a1",
+		"tenantId": "0b5a064d-1803-4401-a858-f19e486142cd"
+	}
+}
