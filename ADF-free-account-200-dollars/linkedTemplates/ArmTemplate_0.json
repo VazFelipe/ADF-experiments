@@ -394,6 +394,53 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/Parquet2')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "top-products.parquet",
+						"folderPath": "top-products",
+						"container": "wwi-02"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": [
+					{
+						"name": "UserId",
+						"type": "UTF8"
+					},
+					{
+						"name": "ProductId",
+						"type": "UTF8"
+					},
+					{
+						"name": "ItemsPurchasedLast12Months",
+						"type": "UTF8"
+					},
+					{
+						"name": "IsTopProduct",
+						"type": "UTF8"
+					},
+					{
+						"name": "IsPreferredProduct",
+						"type": "UTF8"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage1')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/CopyFromParquetToTxt')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
