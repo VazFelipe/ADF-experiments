@@ -5,6 +5,9 @@
 		"factoryName": {
 			"value": "ADF-free-account-200-dollars"
 		},
+		"AzureBlobStorage1_connectionString": {
+			"value": ""
+		},
 		"AzureDataLakeStoragemovies_accountKey": {
 			"value": ""
 		},
