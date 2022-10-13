@@ -1,9 +1,9 @@
 {
-	"name": "pipeline1",
+	"name": "CopyFromParquetToTxt",
 	"properties": {
 		"activities": [
 			{
-				"name": "CopyFromParquetToCsv",
+				"name": "CopyFromParquetToTxt",
 				"type": "Copy",
 				"dependsOn": [],
 				"policy": {
