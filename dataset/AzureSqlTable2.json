@@ -1,0 +1,30 @@
+{
+	"name": "AzureSqlTable2",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase2",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "id_processamento",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "cd_contrato_mae",
+				"type": "varchar"
+			},
+			{
+				"name": "desc_cd_status_contrato",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "mytable"
+		}
+	}
+}
