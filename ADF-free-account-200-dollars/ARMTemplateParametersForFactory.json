@@ -14,6 +14,12 @@
 		"AzureSqlDatabase1_connectionString": {
 			"value": ""
 		},
+		"AzureSqlDatabase2_connectionString": {
+			"value": ""
+		},
+		"AzureSynapseAnalytics1_connectionString": {
+			"value": ""
+		},
 		"AzureDataLakeStoragemovies_properties_typeProperties_url": {
 			"value": "https://storageaccountmovies.dfs.core.windows.net/"
 		},
