@@ -1,5 +1,5 @@
 {
-	"name": "MyTableCSV",
+	"name": "MyTableCSVFroDataReceiving",
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "AzureDataLakeStoragemovies",

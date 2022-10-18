@@ -1,0 +1,78 @@
+{
+	"name": "JoinAndAggregateData",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "MyTableCSV",
+						"type": "DatasetReference"
+					},
+					"name": "CSVDataFromSqlServer"
+				},
+				{
+					"dataset": {
+						"referenceName": "MyTableCSVFroDataReceiving",
+						"type": "DatasetReference"
+					},
+					"name": "CSVDataFromDataShare"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "AggregationsFromDataShare",
+						"type": "DatasetReference"
+					},
+					"name": "SynapseSink"
+				}
+			],
+			"transformations": [
+				{
+					"name": "InnerJoinWithDataShareData"
+				},
+				{
+					"name": "Aggregations"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          id_processamento as string,",
+				"          cd_contrato_mae as string,",
+				"          desc_cd_status_contrato as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> CSVDataFromSqlServer",
+				"source(output(",
+				"          id_processamento as string,",
+				"          cd_contrato_mae as string,",
+				"          desc_cd_status_contrato as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> CSVDataFromDataShare",
+				"CSVDataFromSqlServer, CSVDataFromDataShare join(CSVDataFromSqlServer@cd_contrato_mae == CSVDataFromDataShare@cd_contrato_mae,",
+				"     joinType:'inner',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> InnerJoinWithDataShareData",
+				"InnerJoinWithDataShareData aggregate(groupBy(CSVDataFromSqlServer@id_processamento),",
+				"     countReg = count()) ~> Aggregations",
+				"Aggregations sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     staged: true,",
+				"     allowCopyCommand: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> SynapseSink"
+			]
+		}
+	}
+}
