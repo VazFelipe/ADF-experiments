@@ -13,6 +13,300 @@
 	},
 	"resources": [
 		{
+			"name": "[concat(parameters('factoryName'), '/ETLMoviesFromGitHub')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "MoviesLoading_EL",
+								"type": "DatasetReference"
+							},
+							"name": "MoviesAzureDataLakeStorage"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable1",
+								"type": "DatasetReference"
+							},
+							"name": "SinkToDB"
+						}
+					],
+					"transformations": [
+						{
+							"name": "SchemaChanging",
+							"description": "Collumn deletion and renaming"
+						},
+						{
+							"name": "FilterYearGreaterThan"
+						},
+						{
+							"name": "DerivedPrimaryGenre",
+							"description": "Creating if logic for column genres"
+						},
+						{
+							"name": "Ranking"
+						},
+						{
+							"name": "AggregateRatings",
+							"description": "Aggregations"
+						},
+						{
+							"name": "UpsertIfTrue"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          movie as string,",
+						"          title as string,",
+						"          genres as string,",
+						"          year as string,",
+						"          Rating as string,",
+						"          {Rotton Tomato} as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> MoviesAzureDataLakeStorage",
+						"MoviesAzureDataLakeStorage select(mapColumn(",
+						"          movie,",
+						"          title,",
+						"          genres,",
+						"          year,",
+						"          {Rotten Tomato} = {Rotton Tomato}",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> SchemaChanging",
+						"SchemaChanging filter(toInteger(year) > 1950) ~> FilterYearGreaterThan",
+						"FilterYearGreaterThan derive(PrimaryGenre = iif(locate('|', genres) > 1, left(genres, locate('|',genres) - 1), genres)) ~> DerivedPrimaryGenre",
+						"DerivedPrimaryGenre window(over(PrimaryGenre,",
+						"          year),",
+						"     desc({Rotten Tomato}, true),",
+						"     RatingsRank = rank()) ~> Ranking",
+						"Ranking aggregate(groupBy(PrimaryGenre,",
+						"          year),",
+						"     AverageRating = avg(toInteger({Rotten Tomato})),",
+						"          HighestRated = first(title),",
+						"          LowestRated = last(title),",
+						"          NumberOfMovies = count()) ~> AggregateRatings",
+						"AggregateRatings alterRow(upsertIf(true())) ~> UpsertIfTrue",
+						"UpsertIfTrue sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     deletable:false,",
+						"     insertable:false,",
+						"     updateable:false,",
+						"     upsertable:true,",
+						"     keys:['PrimaryGenre','year'],",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> SinkToDB"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/JoinAndAggregateData')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "MyTableCSV",
+								"type": "DatasetReference"
+							},
+							"name": "CSVDataFromSqlServer"
+						},
+						{
+							"dataset": {
+								"referenceName": "MyTableCSVFroDataReceiving",
+								"type": "DatasetReference"
+							},
+							"name": "CSVDataFromDataShare"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "AggregationsFromDataShare",
+								"type": "DatasetReference"
+							},
+							"name": "SynapseSink"
+						}
+					],
+					"transformations": [
+						{
+							"name": "InnerJoinWithDataShareData"
+						},
+						{
+							"name": "Aggregations"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          id_processamento as string,",
+						"          cd_contrato_mae as string,",
+						"          desc_cd_status_contrato as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> CSVDataFromSqlServer",
+						"source(output(",
+						"          id_processamento as string,",
+						"          cd_contrato_mae as string,",
+						"          desc_cd_status_contrato as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> CSVDataFromDataShare",
+						"CSVDataFromSqlServer, CSVDataFromDataShare join(CSVDataFromSqlServer@cd_contrato_mae == CSVDataFromDataShare@cd_contrato_mae,",
+						"     joinType:'inner',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> InnerJoinWithDataShareData",
+						"InnerJoinWithDataShareData aggregate(groupBy(CSVDataFromSqlServer@id_processamento),",
+						"     countReg = count()) ~> Aggregations",
+						"Aggregations sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     staged: true,",
+						"     allowCopyCommand: true,",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> SynapseSink"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/CopyDataWeek7')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "IngestIntoADLS",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".txt"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "AzureSqlTable2",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "MyTableCSV",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "CopyFromBlobToBlob",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "IngestIntoADLS",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "JoinAndAggregateData",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"CSVDataFromSqlServer": {},
+									"CSVDataFromDataShare": {},
+									"SynapseSink": {}
+								}
+							},
+							"staging": {
+								"linkedService": {
+									"referenceName": "AzureDataLakeStoragemovies",
+									"type": "LinkedServiceReference"
+								},
+								"folderPath": "output"
+							},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/JoinAndAggregateData')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/Movies')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
@@ -121,7 +415,9 @@
 				},
 				"annotations": []
 			},
-			"dependsOn": []
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/ETLMoviesFromGitHub')]"
+			]
 		}
 	]
 }

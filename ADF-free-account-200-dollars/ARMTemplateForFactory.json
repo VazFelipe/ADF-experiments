@@ -99,6 +99,50 @@
 								"parameters": {}
 							}
 						]
+					},
+					{
+						"name": "CopyFromBlobToBlob",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "IngestIntoADLS",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "JoinAndAggregateData",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"CSVDataFromSqlServer": {},
+									"CSVDataFromDataShare": {},
+									"SynapseSink": {}
+								}
+							},
+							"staging": {
+								"linkedService": {
+									"referenceName": "AzureDataLakeStoragemovies",
+									"type": "LinkedServiceReference"
+								},
+								"folderPath": "output"
+							},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
 					}
 				],
 				"policy": {
@@ -109,7 +153,9 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/datasets/AzureSqlTable2')]",
-				"[concat(variables('factoryId'), '/datasets/MyTableCSV')]"
+				"[concat(variables('factoryId'), '/datasets/MyTableCSV')]",
+				"[concat(variables('factoryId'), '/dataflows/JoinAndAggregateData')]",
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStoragemovies')]"
 			]
 		},
 		{
@@ -380,6 +426,27 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/AggregationsFromDataShare')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSynapseAnalytics1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlDWTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "MyTableAggregatedUsingDataShare"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSynapseAnalytics1')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/AzureSqlTable1')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -638,7 +705,61 @@
 					"firstRowAsHeader": true,
 					"quoteChar": "\""
 				},
-				"schema": []
+				"schema": [
+					{
+						"name": "id_processamento",
+						"type": "String"
+					},
+					{
+						"name": "cd_contrato_mae",
+						"type": "String"
+					},
+					{
+						"name": "desc_cd_status_contrato",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStoragemovies')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/MyTableCSVFroDataReceiving')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStoragemovies",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "MyTableCSV.csv",
+						"fileSystem": "data-receiving"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "id_processamento",
+						"type": "String"
+					},
+					{
+						"name": "cd_contrato_mae",
+						"type": "String"
+					},
+					{
+						"name": "desc_cd_status_contrato",
+						"type": "String"
+					}
+				]
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStoragemovies')]"
@@ -975,6 +1096,91 @@
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/datasets/MoviesLoading_EL')]",
 				"[concat(variables('factoryId'), '/datasets/AzureSqlTable1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/JoinAndAggregateData')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "MyTableCSV",
+								"type": "DatasetReference"
+							},
+							"name": "CSVDataFromSqlServer"
+						},
+						{
+							"dataset": {
+								"referenceName": "MyTableCSVFroDataReceiving",
+								"type": "DatasetReference"
+							},
+							"name": "CSVDataFromDataShare"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "AggregationsFromDataShare",
+								"type": "DatasetReference"
+							},
+							"name": "SynapseSink"
+						}
+					],
+					"transformations": [
+						{
+							"name": "InnerJoinWithDataShareData"
+						},
+						{
+							"name": "Aggregations"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          id_processamento as string,",
+						"          cd_contrato_mae as string,",
+						"          desc_cd_status_contrato as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> CSVDataFromSqlServer",
+						"source(output(",
+						"          id_processamento as string,",
+						"          cd_contrato_mae as string,",
+						"          desc_cd_status_contrato as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> CSVDataFromDataShare",
+						"CSVDataFromSqlServer, CSVDataFromDataShare join(CSVDataFromSqlServer@cd_contrato_mae == CSVDataFromDataShare@cd_contrato_mae,",
+						"     joinType:'inner',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> InnerJoinWithDataShareData",
+						"InnerJoinWithDataShareData aggregate(groupBy(CSVDataFromSqlServer@id_processamento),",
+						"     countReg = count()) ~> Aggregations",
+						"Aggregations sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     staged: true,",
+						"     allowCopyCommand: true,",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> SynapseSink"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/MyTableCSV')]",
+				"[concat(variables('factoryId'), '/datasets/MyTableCSVFroDataReceiving')]",
+				"[concat(variables('factoryId'), '/datasets/AggregationsFromDataShare')]"
 			]
 		}
 	]
