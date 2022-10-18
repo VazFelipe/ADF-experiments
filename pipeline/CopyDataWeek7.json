@@ -82,7 +82,8 @@
 						"linkedService": {
 							"referenceName": "AzureDataLakeStoragemovies",
 							"type": "LinkedServiceReference"
-						}
+						},
+						"folderPath": "output"
 					},
 					"compute": {
 						"coreCount": 8,
