@@ -27,6 +27,10 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'AzureSynapseAnalytics1'"
 		},
+		"AzureDatabricks_accessToken": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accessToken' of 'AzureDatabricks'"
+		},
 		"AzureDataLakeStoragemovies_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://storageaccountmovies.dfs.core.windows.net/"
@@ -34,6 +38,10 @@
 		"MoviesVazFelipeGitHub_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://raw.githubusercontent.com/VazFelipe/ADF-experiments/main/MoviesDataset-demo/moviesDB.csv"
+		},
+		"AzureDatabricks_properties_typeProperties_existingClusterId": {
+			"type": "string",
+			"defaultValue": "1021-074626-3abqmhbm"
 		},
 		"containerUri": {
 			"type": "string",
@@ -77,11 +85,17 @@
 					"AzureSynapseAnalytics1_connectionString": {
 						"value": "[parameters('AzureSynapseAnalytics1_connectionString')]"
 					},
+					"AzureDatabricks_accessToken": {
+						"value": "[parameters('AzureDatabricks_accessToken')]"
+					},
 					"AzureDataLakeStoragemovies_properties_typeProperties_url": {
 						"value": "[parameters('AzureDataLakeStoragemovies_properties_typeProperties_url')]"
 					},
 					"MoviesVazFelipeGitHub_properties_typeProperties_url": {
 						"value": "[parameters('MoviesVazFelipeGitHub_properties_typeProperties_url')]"
+					},
+					"AzureDatabricks_properties_typeProperties_existingClusterId": {
+						"value": "[parameters('AzureDatabricks_properties_typeProperties_existingClusterId')]"
 					}
 				}
 			},

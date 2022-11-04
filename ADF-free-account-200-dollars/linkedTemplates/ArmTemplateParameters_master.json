@@ -20,11 +20,17 @@
 		"AzureSynapseAnalytics1_connectionString": {
 			"value": ""
 		},
+		"AzureDatabricks_accessToken": {
+			"value": ""
+		},
 		"AzureDataLakeStoragemovies_properties_typeProperties_url": {
 			"value": "https://storageaccountmovies.dfs.core.windows.net/"
 		},
 		"MoviesVazFelipeGitHub_properties_typeProperties_url": {
 			"value": "https://raw.githubusercontent.com/VazFelipe/ADF-experiments/main/MoviesDataset-demo/moviesDB.csv"
+		},
+		"AzureDatabricks_properties_typeProperties_existingClusterId": {
+			"value": "1021-074626-3abqmhbm"
 		},
 		"containerUri": {
 			"value": ""
